@@ -15,6 +15,9 @@ jobs:
           echo "${GIT_DEPLOY_KEY}" > ~/.ssh/id_rsa
           chmod 400 ~/.ssh/id_rsa
 
+          git config --global user.email "release@movableink.com"
+          git config --global user.name "Movable Ink Release"
+
           git clone git@github.com:movableink/pr-clubhouse-lint-action.git
           cd pr-clubhouse-lint-action
 
