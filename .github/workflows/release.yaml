@@ -1,8 +1,5 @@
 name: Release
-on:
-  push:
-    branches:
-      - master
+on: [push]
 
 jobs:
   release:
@@ -11,17 +8,15 @@ jobs:
     steps:
       - name: Merge release branch
         env:
-          GIT_DEPLOY_KEY: ${{ secrets.GIT_DEPLOY_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -t rsa github.com > ~/.ssh/known_hosts
-          echo "${GIT_DEPLOY_KEY}" > ~/.ssh/id_rsa
-          chmod 400 ~/.ssh/id_rsa
 
           git config --global user.email "release@movableink.com"
           git config --global user.name "Movable Ink Release"
 
-          git clone git@github.com:movableink/pr-clubhouse-lint-action.git
+          git clone https://${GITHUB_TOKEN}@github.com/movableink/pr-clubhouse-lint-action.git
           cd pr-clubhouse-lint-action
 
           git checkout release
@@ -35,4 +30,4 @@ jobs:
 
           git add .
           git commit -m "vendored release for $(git rev-parse master)"
-          git push origin release
+          #git push origin release
