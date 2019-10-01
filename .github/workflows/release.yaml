@@ -12,17 +12,19 @@ jobs:
       - name: Merge release branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_BRANCH: release
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -t rsa github.com > ~/.ssh/known_hosts
 
-          git config --global user.email "release@movableink.com"
-          git config --global user.name "Movable Ink Release"
+          git clone https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git
+          cd $GITHUB_REPOSITORY
 
-          git clone https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/movableink/pr-clubhouse-lint-action.git
-          cd pr-clubhouse-lint-action
+          # Set git user to the commit we are building from
+          git config user.email "$(git --no-pager log --format=format:'%an' -n 1)"
+          git config user.name "$(git --no-pager log --format=format:'%ae' -n 1)"
 
-          git checkout release
+          git checkout $RELEASE_BRANCH
           git pull --rebase
           git merge master
 
@@ -33,4 +35,4 @@ jobs:
 
           git add .
           git commit --allow-empty -m "vendored release for $(git rev-parse master)"
-          git push origin release
+          git push origin $RELEASE_BRANCH
