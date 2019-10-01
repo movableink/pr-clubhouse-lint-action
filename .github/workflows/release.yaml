@@ -29,5 +29,5 @@ jobs:
           du -h --max-depth=1 .
 
           git add .
-          git commit -m "vendored release for $(git rev-parse master)"
+          git commit --allow-empty -m "vendored release for $(git rev-parse master)"
           #git push origin release
