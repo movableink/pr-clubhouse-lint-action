@@ -2,7 +2,7 @@ name: Clubhouse PR Lint
 description: Checks pull requests to ensure they have Clubhouse links
 author: Movable Ink
 runs:
-  using: "node10"
+  using: "node12"
   main: "./index.js"
 branding:
   icon: clipboard
