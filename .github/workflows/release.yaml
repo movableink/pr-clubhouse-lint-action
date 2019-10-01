@@ -17,8 +17,8 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -t rsa github.com > ~/.ssh/known_hosts
 
-          git clone https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git
-          cd $GITHUB_REPOSITORY
+          git clone https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git repo
+          cd repo
 
           # Set git user to the commit we are building from
           git config user.email "$(git --no-pager log --format=format:'%an' -n 1)"
