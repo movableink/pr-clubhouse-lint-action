@@ -1,68 +1,41 @@
-# pr-lint-action
+# pr-clubhouse-lint-action
 
-A GitHub Action that verifies your pull request contains a reference to a ticket.  You can use this to (optionally) check:
+A GitHub Action that verifies your pull request contains a reference to a Clubhouse card. If your Clubhouse card number is 1234, this will check for `[ch1234]` or `ch1234/` in:
 
-* The PR title contains `[PROJ-1234]`
-* The branch name contains `PROJ-1234` or `PROJ_1234`
-* Each commit contains `[PROJ-1234]`
-
+* The pull request title
+* The pull request body
+* The pull request branch name
 
 
 ## Usage
 
-Add `.github/main.workflow` with the following:
+Add `.github/workflows/lint.yaml` with the following:
 
+```yaml
+name: PR Lint
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  ch_lint_pr:
+    name: Clubhouse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: movableink/pr-clubhouse-lint-action@release
 ```
-workflow "Lint your PRs" {
-  on = "pull_request"
-  resolves = "PR Lint Action"
-}
 
-action "PR Lint Action" {
-  uses = "vijaykramesh/pr-lint-action@master"
-  secrets = ["GITHUB_TOKEN"]
-}
-```
+## Releasing
 
-## Configuration
+This action needs `node_modules` vendored, but we don't want to do so normally. To release a new version:
 
-Configure by creating a `.github/pr-lint.yml` file:
-
-For example:
-
-```yml
-projects: ['PROJ', 'ABC']
-check_title: true
-check_branch: true
-check_commits: true
-ignore_case: true
-```
+* Remove `node_modules`
+* Check out the `release` branch
+* Run `git merge master`
+* Run `npm install --production` (to ensure dev dependencies don't get installed)
+* Commit the result, if any changes
+* Push the `release` branch to Github
 
 ## Testing
 
-Run `jest test` to test:
-
-```
-PASS  ./index.test.js
-  pr-lint-action
-    ✓ fails if check_title is true and title does not match (180ms)
-    ✓ passes if check_title is false and title does not match (66ms)
-    ✓ passes if check_title is true and title matches (67ms)
-    ✓ fails if check_branch is true and branch does not match (66ms)
-    ✓ passes if check_branch is false and branch does not match (61ms)
-    ✓ passes if check_branch is true and branch matches (64ms)
-    ✓ passes if check_commits is true and all commits match (66ms)
-    ✓ fails if check_commits is true and some commits do not match (59ms)
-    ✓ passes if check_commits is false and all commits match (61ms)
-    ✓ passes if check_commits is false and some commits do not match (62ms)
-    ✓ fails if check_branch and check_title is true and title does not match (59ms)
-    ✓ fails if check_branch and check_title is true and title does not match (63ms)
-    ✓ passes if check_branch and check_title is true and both match (61ms)
-    ✓ passes if ignore_case and lower case title/branch (58ms)
-    ✓ passes if ignore_case and lower case commits (65ms)
-    ✓ fails if not ignore_case and lower case title/branch (66ms)
-```
-
-## Contributing
-
-If you have other things worth automatically checking for in your PRs, please submit a pull request.
+Run `npm test` to test.
