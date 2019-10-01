@@ -1,5 +1,0 @@
-projects: ['PROJ']
-check_title: false
-check_branch: false
-check_commits: true
-ignore_case: false
