@@ -10,7 +10,7 @@ jobs:
         env:
           GIT_DEPLOY_KEY: ${{ secrets.GIT_DEPLOY_KEY }}
         run: |
-          echo "${GIT_DEPLOY_KEY}" > /root/.ssh/id_rsa
+          echo "${GIT_DEPLOY_KEY}" > ~/.ssh/id_rsa
           git checkout release
           git pull --rebase
           rm -Rf node_modules
