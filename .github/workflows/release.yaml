@@ -13,11 +13,17 @@ jobs:
           mkdir -p ~/.ssh
           echo "${GIT_DEPLOY_KEY}" > ~/.ssh/id_rsa
           chmod 0600 ~/.ssh/id_rsa
+
+          git clone git@github.com:movableink/pr-clubhouse-lint-action.git
+          cd pr-clubhouse-lint-action
+
           git checkout release
           git pull --rebase
           git merge master
+
           rm -Rf node_modules
           npm install --production
+
           git add .
           git commit -m 'release'
           # git push
