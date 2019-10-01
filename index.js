@@ -3,7 +3,7 @@ const getConfig = require('./utils/config');
 
 const CONFIG_FILENAME = 'pr-lint.yml';
 
-const defaults = {
+const config = {
   check_commits: false
 };
 
@@ -20,11 +20,6 @@ Toolkit.run(
       ref: pull_request.head.ref
     };
 
-    const config = {
-      ...defaults,
-      ...(await getConfig(tools.github, CONFIG_FILENAME, repoInfo))
-    };
-
     const toSearch = [];
 
     const { title, body } = pull_request;
@@ -36,16 +31,16 @@ Toolkit.run(
 
     toSearch.push(`Branch name: ${headBranch}`);
 
-    if (config.check_commits) {
-      const listCommitsParams = {
-        owner: repository.owner.login,
-        repo: repository.name,
-        pull_number: pull_request.number
-      };
-      const commitsInPR = (await tools.github.pulls.listCommits(listCommitsParams)).data;
-      const messages = commitsInPR.map(commit => commit.commit.message);
-      messages.forEach(m => toSearch.push(m));
-    }
+    // if (config.check_commits) {
+    //   const listCommitsParams = {
+    //     owner: repository.owner.login,
+    //     repo: repository.name,
+    //     pull_number: pull_request.number
+    //   };
+    //   const commitsInPR = (await tools.github.pulls.listCommits(listCommitsParams)).data;
+    //   const messages = commitsInPR.map(commit => commit.commit.message);
+    //   messages.forEach(m => toSearch.push(m));
+    // }
 
     const passed = toSearch.some(line => {
       const linePassed = !!line.match(clubhouseRegex);
@@ -62,7 +57,7 @@ Toolkit.run(
     }
   },
   {
-    event: ['pull_request.opened', 'pull_request.edited', 'pull_request.synchronize'],
-    secrets: ['GITHUB_TOKEN']
+    event: ['pull_request.opened', 'pull_request.edited', 'pull_request.synchronize']
+    //secrets: ['GITHUB_TOKEN']
   }
 );

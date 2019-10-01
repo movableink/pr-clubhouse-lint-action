@@ -110,19 +110,19 @@ describe('pr-lint-action', () => {
     expect.assertions(1);
   });
 
-  it('passes if any commits match', async () => {
-    nock('https://api.github.com')
-      .get('/repos/movableink/pr-clubhouse-lint-action-test/contents/.github/pr-lint.yml')
-      .query(true)
-      .reply(200, configFixture('commits.yml'));
+  // it('passes if any commits match', async () => {
+  //   nock('https://api.github.com')
+  //     .get('/repos/movableink/pr-clubhouse-lint-action-test/contents/.github/pr-lint.yml')
+  //     .query(true)
+  //     .reply(200, configFixture('commits.yml'));
 
-    mockGetPRCommitListRequest(good_commits);
+  //   mockGetPRCommitListRequest(good_commits);
 
-    tools.context.payload = pullRequestOpenedFixture(bad_title_and_branch);
-    await action(tools);
-    expect(tools.exit.success).toHaveBeenCalled();
-    expect.assertions(1);
-  });
+  //   tools.context.payload = pullRequestOpenedFixture(bad_title_and_branch);
+  //   await action(tools);
+  //   expect(tools.exit.success).toHaveBeenCalled();
+  //   expect.assertions(1);
+  // });
 });
 
 function mockGetPRCommitListRequest(commits) {
