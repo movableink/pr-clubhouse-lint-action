@@ -19,7 +19,7 @@ jobs:
           git config --global user.email "release@movableink.com"
           git config --global user.name "Movable Ink Release"
 
-          git clone https://${GITHUB_TOKEN}@github.com/movableink/pr-clubhouse-lint-action.git
+          git clone https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/movableink/pr-clubhouse-lint-action.git
           cd pr-clubhouse-lint-action
 
           git checkout release
