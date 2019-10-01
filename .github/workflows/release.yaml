@@ -10,11 +10,13 @@ jobs:
         env:
           GIT_DEPLOY_KEY: ${{ secrets.GIT_DEPLOY_KEY }}
         run: |
+          mkdir -p ~/.ssh
           echo "${GIT_DEPLOY_KEY}" > ~/.ssh/id_rsa
+          chmod 0600 ~/.ssh/id_rsa
           git checkout release
           git pull --rebase
-          rm -Rf node_modules
           git merge master
+          rm -Rf node_modules
           npm install --production
           git add .
           git commit -m 'release'
