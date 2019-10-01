@@ -1,5 +1,8 @@
 name: Release
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   release:
@@ -32,4 +35,4 @@ jobs:
 
           git add .
           git commit -m "vendored release for $(git rev-parse master)"
-          # git push
+          git push origin release
