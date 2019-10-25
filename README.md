@@ -12,14 +12,14 @@ A GitHub Action that verifies your pull request contains a reference to a Clubho
 Add `.github/workflows/lint.yaml` with the following:
 
 ```yaml
-name: PR Lint
+name: Clubhouse
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
 
 jobs:
   ch_lint_pr:
-    name: Clubhouse
+    name: Check for story ID
     runs-on: ubuntu-latest
     steps:
       - uses: movableink/pr-clubhouse-lint-action@release
