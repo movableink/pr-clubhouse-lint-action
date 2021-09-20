@@ -1,6 +1,6 @@
-# pr-clubhouse-lint-action
+# pr-shortcut-lint-action
 
-A GitHub Action that verifies your pull request contains a reference to a Clubhouse card. If your Clubhouse card number is 1234, this will check for `[ch1234]` or `ch1234/` in:
+A GitHub Action that verifies your pull request contains a reference to a Shortcut card. If your Shortcut card number is 1234, this will check for `[ch1234]` or `ch1234/` in:
 
 * The pull request title
 * The pull request body
@@ -12,7 +12,7 @@ A GitHub Action that verifies your pull request contains a reference to a Clubho
 Add `.github/workflows/lint.yaml` with the following:
 
 ```yaml
-name: Clubhouse
+name: Shortcut
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
