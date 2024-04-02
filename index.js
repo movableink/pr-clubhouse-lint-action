@@ -10,6 +10,6 @@ if (!fs.existsSync(`${__dirname}/node_modules`)) {
 const github = require('@actions/github');
 const action = require('./lib/action');
 
-const octokit = new github.GitHub(process.env.GITHUB_TOKEN);
+const octokit = github.GitHub(process.env.GITHUB_TOKEN);
 
 action(github.context, octokit);
