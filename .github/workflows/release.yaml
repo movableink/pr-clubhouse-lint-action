@@ -35,4 +35,4 @@ jobs:
 
           git add .
           git commit --allow-empty -m "vendored release for $(git rev-parse master)"
-          git push origin $RELEASE_BRANCH
+          git push origin -f $RELEASE_BRANCH
