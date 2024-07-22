@@ -27474,16 +27474,19 @@ async function run() {
 
   // Check if the event is a pull request event or pull request target event
   if (github.context.eventName === 'pull_request' || github.context.eventName === 'pull_request_target') {
-    action(github.context, octokit);
+    startAction(github.context, octokit);
   } else {
     console.log('This action only runs on pull request events.');
   }
 }
 
+function startAction(context, api) {
+  core.log("startAction")
+}
+
 module.exports = {
   run
 }
-  
 
 
 /***/ }),
