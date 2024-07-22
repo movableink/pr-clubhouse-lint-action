@@ -12,4 +12,9 @@ const action = require('./lib/action');
 
 const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
 
-action(github.context, octokit);
+// Check if the event is a pull request event
+if (github.context.eventName === 'pull_request') {
+  action(github.context, octokit);
+} else {
+  console.log('This action only runs on pull request events.');
+}
