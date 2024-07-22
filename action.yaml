@@ -1,9 +1,11 @@
 name: Shortcut PR Lint
 description: Checks pull requests to ensure they have Shortcut links
 author: Movable Ink
+
 runs:
   using: "node20"
-  main: "./index.js"
+  main: "./dist/index.js"
+
 branding:
   icon: clipboard
   color: purple
