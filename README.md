@@ -25,16 +25,39 @@ jobs:
       - uses: movableink/pr-clubhouse-lint-action@release
 ```
 
+On self-hosted runners, the following is required:
+
+```yaml
+name: Shortcut
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  sc_lint_pr:
+    name: Shortcut
+    runs-on: mi-gha-runner-generic
+    permissions:
+      actions: write
+      pull-requests: read
+      contents: read
+    steps:
+      - uses: movableink/pr-clubhouse-lint-action@dschulze/sc-104807/release-process
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
 ## Releasing
 
 This action needs `node_modules` vendored, but we don't want to do so normally. To release a new version:
 
 * Remove `node_modules`
-* Check out the `release` branch
+* Check out the `v1` branch
 * Run `git merge master`
 * Run `npm install --production` (to ensure dev dependencies don't get installed)
+* Run `npm run build`
 * Commit the result, if any changes
-* Push the `release` branch to Github
+* Push the `v1` branch to Github
 
 ## Testing
 
