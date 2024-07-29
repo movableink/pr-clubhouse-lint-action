@@ -54,10 +54,10 @@ This action needs `node_modules` vendored, but we don't want to do so normally. 
 * Remove `node_modules`
 * Check out the `v1` branch
 * Run `git merge master`
-* Run `npm install --production` (to ensure dev dependencies don't get installed)
+* Run `npm install`
 * Run `npm run build`
 * Commit the result, if any changes
-* Push the `v1` branch to Github
+* Merge PR to `v1` branch
 
 ## Testing
 
