@@ -2,7 +2,7 @@ name: Shortcut PR Lint
 description: Checks pull requests to ensure they have Shortcut links
 author: Movable Ink
 runs:
-  using: "node12"
+  using: "node22"
   main: "./index.js"
 branding:
   icon: clipboard
