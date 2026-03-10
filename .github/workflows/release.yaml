@@ -24,6 +24,6 @@ jobs:
           npm run build
 
           git checkout -B $RELEASE_BRANCH master
-          git add dist/
+          git add -f dist/
           git commit -m "build: release $(git rev-parse master)"
           git push --force-with-lease origin $RELEASE_BRANCH
