@@ -3,7 +3,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "build": "esbuild index.js --bundle --platform=node --format=esm --outfile=dist/index.js",
+    "build": "esbuild index.js --bundle --platform=node --format=esm --outfile=dist/index.js --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
     "start": "node ./index.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules node_modules/jest/bin/jest.js"
   },
