@@ -3,7 +3,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "build": "ncc build index.js -o dist",
+    "build": "esbuild index.js --bundle --platform=node --format=esm --outfile=dist/index.js",
     "start": "node ./index.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules node_modules/jest/bin/jest.js"
   },
@@ -13,7 +13,7 @@
     "@actions/github": "^9.0.0"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.38.1",
+    "esbuild": "^0.25.0",
     "baseline-browser-mapping": "^2.10.0",
     "jest": "^30.2.0",
     "js-yaml": "^4.1.1",
