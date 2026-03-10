@@ -22,19 +22,12 @@ jobs:
     name: Check for story ID
     runs-on: ubuntu-latest
     steps:
-      - uses: movableink/pr-clubhouse-lint-action@release
+      - uses: movableink/pr-clubhouse-lint-action@v1
 ```
 
 ## Releasing
 
-This action uses `ncc` to bundle all dependencies into `dist/`, so `node_modules` does not need to be vendored. To release a new version:
-
-* Check out the `v1` branch
-* Run `git merge master`
-* Run `npm install`
-* Run `npm run build`
-* Commit the result, if any changes
-* Push to the `v1` branch
+Releases are automated. Merging to `master` will run tests and, if they pass, build and push the `v1` tag automatically.
 
 ## Testing
 
