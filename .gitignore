@@ -87,3 +87,6 @@ typings/
 # DynamoDB Local files
 .dynamodb/
 
+
+# Build output (generated on v1 release branch by CI)
+dist/

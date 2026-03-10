@@ -27,14 +27,14 @@ jobs:
 
 ## Releasing
 
-This action needs `node_modules` vendored, but we don't want to do so normally. To release a new version:
+This action uses `ncc` to bundle all dependencies into `dist/`, so `node_modules` does not need to be vendored. To release a new version:
 
-* Remove `node_modules`
-* Check out the `release` branch
+* Check out the `v1` branch
 * Run `git merge master`
-* Run `npm install --production` (to ensure dev dependencies don't get installed)
+* Run `npm install`
+* Run `npm run build`
 * Commit the result, if any changes
-* Push the `release` branch to Github
+* Push to the `v1` branch
 
 ## Testing
 
