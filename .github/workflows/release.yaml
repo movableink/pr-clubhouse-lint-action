@@ -36,4 +36,4 @@ jobs:
           git add -f dist/
           git commit -m "build: release $(git rev-parse HEAD)"
           git tag -f v1
-          git push -f origin v1
+          git push -f origin refs/tags/v1
