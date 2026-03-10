@@ -5,25 +5,35 @@ on:
       - master
 
 jobs:
-  release:
-    name: Release
+  test:
     runs-on: ubuntu-slim
     steps:
-      - name: Build and release to v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_BRANCH: v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: npm
+      - run: npm install
+      - run: npm test
+
+  release:
+    needs: test
+    runs-on: ubuntu-slim
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: npm
+      - run: npm install
+      - run: npm run build
+      - name: Update v1 tag
         run: |
-          git clone https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git repo
-          cd repo
-
-          git config user.email "$(git --no-pager log --format=format:'%ae' -n 1)"
-          git config user.name "$(git --no-pager log --format=format:'%an' -n 1)"
-
-          npm install
-          npm run build
-
-          git checkout -B $RELEASE_BRANCH master
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           git add -f dist/
-          git commit -m "build: release $(git rev-parse master)"
-          git push --force-with-lease origin $RELEASE_BRANCH
+          git commit -m "build: release $(git rev-parse HEAD)"
+          git tag -f v1
+          git push -f origin v1
