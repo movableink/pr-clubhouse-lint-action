@@ -9,30 +9,24 @@ jobs:
     name: Release
     runs-on: ubuntu-slim
     steps:
-      - name: Merge release branch
+      - name: Merge and build v1 branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_BRANCH: release
+          RELEASE_BRANCH: v1
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -t rsa github.com > ~/.ssh/known_hosts
-
           git clone https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git repo
           cd repo
 
-          # Set git user to the commit we are building from
-          git config user.email "$(git --no-pager log --format=format:'%an' -n 1)"
-          git config user.name "$(git --no-pager log --format=format:'%ae' -n 1)"
+          git config user.email "$(git --no-pager log --format=format:'%ae' -n 1)"
+          git config user.name "$(git --no-pager log --format=format:'%an' -n 1)"
 
           git checkout $RELEASE_BRANCH
           git pull --rebase
           git merge master
 
-          rm -Rf node_modules
-          npm install --production
+          npm install
+          npm run build
 
-          du -h --max-depth=1 .
-
-          git add .
-          git commit --allow-empty -m "vendored release for $(git rev-parse master)"
+          git add dist/
+          git commit --allow-empty -m "build: release $(git rev-parse master)"
           git push origin $RELEASE_BRANCH
