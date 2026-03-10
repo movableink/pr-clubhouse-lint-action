@@ -10,11 +10,11 @@ jobs:
   test:
     runs-on: ubuntu-slim
     steps:
-      - uses: actions/checkout@v5
-      - name: Setup Node.js 20.x
+      - uses: actions/checkout@v6
+      - name: Setup Node.js 24.x
         uses: actions/setup-node@v6
         with:
-          node-version: 20.x
+          node-version: 24.x
           cache: npm
       - run: npm install
       - run: npm test

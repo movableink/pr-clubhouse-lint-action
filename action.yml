@@ -1,8 +1,13 @@
 name: Shortcut PR Lint
 description: Checks pull requests to ensure they have Shortcut links
 author: Movable Ink
+inputs:
+  approved-bots:
+    description: 'Comma-separated list of bot usernames that are allowed to bypass the Shortcut ID check'
+    required: false
+    default: ''
 runs:
-  using: "node20"
+  using: "node24"
   main: "./index.js"
 branding:
   icon: clipboard
