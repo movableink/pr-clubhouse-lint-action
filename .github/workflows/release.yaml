@@ -9,7 +9,7 @@ jobs:
     name: Release
     runs-on: ubuntu-slim
     steps:
-      - name: Merge and build v1 branch
+      - name: Build and release to v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_BRANCH: v1
@@ -20,13 +20,10 @@ jobs:
           git config user.email "$(git --no-pager log --format=format:'%ae' -n 1)"
           git config user.name "$(git --no-pager log --format=format:'%an' -n 1)"
 
-          git checkout $RELEASE_BRANCH
-          git pull --rebase
-          git merge master
-
           npm install
           npm run build
 
+          git checkout -B $RELEASE_BRANCH master
           git add dist/
-          git commit --allow-empty -m "build: release $(git rev-parse master)"
-          git push origin $RELEASE_BRANCH
+          git commit -m "build: release $(git rev-parse master)"
+          git push --force-with-lease origin $RELEASE_BRANCH
