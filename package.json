@@ -1,22 +1,22 @@
 {
-  "name": "pr-lint-action",
-  "private": true,
+  "name": "pr-clubhouse-lint-action",
+  "version": "1.0.0",
+  "description": "A GitHub Action that verifies your pull request contains a reference to a Shortcut card. If your Shortcut card number is 1234, this will check for `[ch1234]` or `ch1234/` in:",
+  "homepage": "https://github.com/movableink/pr-clubhouse-lint-action#readme",
+  "bugs": {
+    "url": "https://github.com/movableink/pr-clubhouse-lint-action/issues"
+  },
+  "license": "ISC",
+  "author": "",
   "main": "index.js",
   "scripts": {
-    "build": "ncc build index.js -o dist",
-    "start": "node ./index.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "type": "module",
   "dependencies": {
     "@actions/core": "^3.0.0",
     "@actions/github": "^9.0.0"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.38.3",
-    "baseline-browser-mapping": "^2.10.0",
-    "jest": "^30.2.0",
-    "js-yaml": "^4.1.1",
-    "nock": "^14.0.11"
+    "esbuild": "^0.27.4"
   }
 }
