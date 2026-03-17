@@ -5392,7 +5392,7 @@ var require_body = __commonJS({
         });
       }
       assert(isReadableStreamLike(stream));
-      let action = null;
+      let action2 = null;
       let source = null;
       let length = null;
       let type = null;
@@ -5445,7 +5445,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
           length = null;
         }
         source = object;
-        action = async function* () {
+        action2 = async function* () {
           for (const part of blobParts) {
             if (part.stream) {
               yield* part.stream();
@@ -5475,11 +5475,11 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       if (typeof source === "string" || util.isBuffer(source)) {
         length = Buffer.byteLength(source);
       }
-      if (action != null) {
+      if (action2 != null) {
         let iterator2;
         stream = new ReadableStream({
           async start() {
-            iterator2 = action(object)[Symbol.asyncIterator]();
+            iterator2 = action2(object)[Symbol.asyncIterator]();
           },
           async pull(controller) {
             const { value, done } = await iterator2.next();
@@ -23618,12 +23618,11 @@ function getOctokit(token, options, ...additionalPlugins) {
 }
 
 // src/main.js
-async function run() {
-  const context3 = context2;
+var shortcutRegex = /(\[ch\d+\])|(ch\d+\/)|(\[sc\d+\])|(sc\d+\/)|(\[sc-\d+\])|(sc-\d+\/)/;
+var jobNames = ["Shortcut", "Check for story ID"];
+async function action(context3, api) {
   const pull_request = context3.payload.pull_request;
   const repository = context3.payload.repository;
-  const shortcutRegex = /(\[ch\d+\])|(ch\d+\/)|(\[sc\d+\])|(sc\d+\/)|(\[sc-\d+\])|(sc-\d+\/)/;
-  const jobNames = ["Shortcut", "Check for story ID"];
   const approvedBots = getInput("approved-bots").split(",").map((s) => s.trim()).filter(Boolean);
   const prAuthor = pull_request.user && pull_request.user.login;
   if (approvedBots.length > 0 && approvedBots.includes(prAuthor)) {
@@ -23651,7 +23650,6 @@ async function run() {
     setFailed("PR Linting Failed");
   }
   if (process.env.GITHUB_TOKEN) {
-    const api = getOctokit(process.env.GITHUB_TOKEN);
     const checkList = await api.rest.checks.listForRef(repoInfo);
     const { check_runs } = checkList.data;
     const shortcutChecks = check_runs.filter((r) => jobNames.includes(r.name));
@@ -23665,6 +23663,11 @@ async function run() {
       });
     }
   }
+}
+async function run() {
+  const context3 = context2;
+  const api = process.env.GITHUB_TOKEN ? getOctokit(process.env.GITHUB_TOKEN) : null;
+  await action(context3, api);
 }
 
 // src/index.js

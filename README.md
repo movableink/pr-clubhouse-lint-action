@@ -32,3 +32,11 @@ Releases are automated. Merging to `master` will run tests and, if they pass, bu
 ## Testing
 
 Run `npm test` to test.
+
+## Build
+
+The build can be completed by running the following command:
+
+```
+./run-podman-build.sh
+```
