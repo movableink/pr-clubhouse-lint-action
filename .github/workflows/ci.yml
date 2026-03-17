@@ -26,3 +26,23 @@ jobs:
             exit 1
           fi
           rm dist/index.check.js
+
+  get-release-version:
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v6
+      - name: get-version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+          echo "VERSION"
+          echo "$VERSION"
+          MAJOR=$(echo "$VERSION" | sed 's/^v//' | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | sed 's/^v//' | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | sed 's/^v//' | cut -d. -f3)
+          NEXT_VERSION="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          echo "NEXT_VERSION"
+          echo "$NEXT_VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "next_version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
