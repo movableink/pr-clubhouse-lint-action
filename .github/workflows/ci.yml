@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@v6
+      - name: back-up-index-file
+        run: |
+          cp dist/index.js index_check.js
       - uses: actions/setup-node@v6
         with:
           node-version: 24.x
@@ -20,7 +23,7 @@ jobs:
       - name: verify-build
         run: |
           npx esbuild src/index.js --bundle --platform=node --target=node24 --format=cjs --outfile=dist/index.check.js
-          if ! diff dist/index.js dist/index.check.js > /dev/null 2>&1; then
+          if ! diff index_check.js dist/index.check.js > /dev/null 2>&1; then
             echo "::error::dist/index.js is out of date. Run the build and commit the result. Run ./run-podman-build.sh"
             diff dist/index.js dist/index.check.js || true
             exit 1
