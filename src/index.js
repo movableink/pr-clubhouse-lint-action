@@ -1,4 +1,6 @@
-import { context, getOctokit } from '@actions/github';
-import action from '../lib/action.js';
+/**
+ * The entrypoint for the action.
+ */
+import { run } from './main.js'
 
-action(context, getOctokit(process.env.GITHUB_TOKEN));
+run()

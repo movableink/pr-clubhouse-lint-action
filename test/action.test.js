@@ -4,9 +4,10 @@ jest.unstable_mockModule('@actions/core', () => ({
   getInput: jest.fn(),
   setFailed: jest.fn(),
   warning: jest.fn(),
+  info: jest.fn(),
 }));
 
-const { default: action } = await import('./action.js');
+const { action } = await import('../src/main.js');
 const core = await import('@actions/core');
 
 process.env.GITHUB_TOKEN = 'fake_token';
@@ -74,7 +75,7 @@ describe('pr-lint-action', () => {
 
 
   beforeEach(() => {
-    console.log = jest.fn();
+    core.info.mockReset();
     core.warning.mockReset();
     core.setFailed.mockReset();
     core.getInput.mockReset().mockReturnValue('');
@@ -103,7 +104,7 @@ describe('pr-lint-action', () => {
         context.payload = pullRequestOpenedFixture(clubhouse.bad_title_and_good_branch);
 
         await action(context, api);
-        expect(console.log).toHaveBeenCalledWith('Passed shortcut number check: true');
+        expect(core.info).toHaveBeenCalledWith('Passed shortcut number check: true');
         expect(core.setFailed).not.toHaveBeenCalled();
         expect.assertions(2);
       });
@@ -112,7 +113,7 @@ describe('pr-lint-action', () => {
         context.payload = pullRequestOpenedFixture(clubhouse.good_title_and_branch);
 
         await action(context, api);
-        expect(console.log).toHaveBeenCalledWith('Passed shortcut number check: true');
+        expect(core.info).toHaveBeenCalledWith('Passed shortcut number check: true');
         expect(core.setFailed).not.toHaveBeenCalled();
         expect.assertions(2);
       });
@@ -121,7 +122,7 @@ describe('pr-lint-action', () => {
         context.payload = pullRequestOpenedFixture(clubhouse.good_body);
 
         await action(context, api);
-        expect(console.log).toHaveBeenCalledWith('Passed shortcut number check: true');
+        expect(core.info).toHaveBeenCalledWith('Passed shortcut number check: true');
         expect(core.setFailed).not.toHaveBeenCalled();
         expect.assertions(2);
       });
@@ -132,7 +133,7 @@ describe('pr-lint-action', () => {
         context.payload = pullRequestOpenedFixture(shortcut.bad_title_and_good_branch);
 
         await action(context, api);
-        expect(console.log).toHaveBeenCalledWith('Passed shortcut number check: true');
+        expect(core.info).toHaveBeenCalledWith('Passed shortcut number check: true');
         expect(core.setFailed).not.toHaveBeenCalled();
         expect.assertions(2);
       });
@@ -141,7 +142,7 @@ describe('pr-lint-action', () => {
         context.payload = pullRequestOpenedFixture(shortcut.good_title_and_branch);
 
         await action(context, api);
-        expect(console.log).toHaveBeenCalledWith('Passed shortcut number check: true');
+        expect(core.info).toHaveBeenCalledWith('Passed shortcut number check: true');
         expect(core.setFailed).not.toHaveBeenCalled();
         expect.assertions(2);
       });
@@ -150,7 +151,7 @@ describe('pr-lint-action', () => {
         context.payload = pullRequestOpenedFixture(shortcut.good_body);
 
         await action(context, api);
-        expect(console.log).toHaveBeenCalledWith('Passed shortcut number check: true');
+        expect(core.info).toHaveBeenCalledWith('Passed shortcut number check: true');
         expect(core.setFailed).not.toHaveBeenCalled();
         expect.assertions(2);
       });
@@ -160,7 +161,7 @@ describe('pr-lint-action', () => {
           context.payload = pullRequestOpenedFixture(shortcut.dashorized.bad_title_and_good_branch);
 
           await action(context, api);
-          expect(console.log).toHaveBeenCalledWith('Passed shortcut number check: true');
+          expect(core.info).toHaveBeenCalledWith('Passed shortcut number check: true');
           expect(core.setFailed).not.toHaveBeenCalled();
           expect.assertions(2);
         });
@@ -169,7 +170,7 @@ describe('pr-lint-action', () => {
           context.payload = pullRequestOpenedFixture(shortcut.dashorized.good_title_and_branch);
 
           await action(context, api);
-          expect(console.log).toHaveBeenCalledWith('Passed shortcut number check: true');
+          expect(core.info).toHaveBeenCalledWith('Passed shortcut number check: true');
           expect(core.setFailed).not.toHaveBeenCalled();
           expect.assertions(2);
         });
@@ -178,7 +179,7 @@ describe('pr-lint-action', () => {
           context.payload = pullRequestOpenedFixture(shortcut.dashorized.good_body);
 
           await action(context, api);
-          expect(console.log).toHaveBeenCalledWith('Passed shortcut number check: true');
+          expect(core.info).toHaveBeenCalledWith('Passed shortcut number check: true');
           expect(core.setFailed).not.toHaveBeenCalled();
           expect.assertions(2);
         });
@@ -201,7 +202,7 @@ describe('pr-lint-action', () => {
       context.payload = pullRequestOpenedFixture({ ...bad_title_and_branch, user_login: 'dependabot[bot]' });
 
       await action(context, api);
-      expect(console.log).toHaveBeenCalledWith('Bypassing check for approved bot: dependabot[bot]');
+      expect(core.info).toHaveBeenCalledWith('Bypassing check for approved bot: dependabot[bot]');
       expect(core.setFailed).not.toHaveBeenCalled();
       expect.assertions(2);
     });

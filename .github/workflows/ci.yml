@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  run-unit-tests:
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v6
+      - name: back-up-index-file
+        run: |
+          cp dist/index.js index_check.js
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          cache: npm
+      - name: install-npm-packages
+        run: npm install
+      - name: run-unit-tests
+        run: npm test
+      - name: verify-build
+        run: |
+          npx esbuild src/index.js --bundle --platform=node --target=node24 --format=cjs --outfile=dist/index.check.js
+          if ! diff index_check.js dist/index.check.js > /dev/null 2>&1; then
+            echo "::error::dist/index.js is out of date. Run the build and commit the result. Run ./run-podman-build.sh"
+            diff dist/index.js dist/index.check.js || true
+            exit 1
+          fi
+          rm dist/index.check.js
+
+  get-release-version:
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v6
+      - name: get-version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+          echo "VERSION"
+          echo "$VERSION"
+          MAJOR=$(echo "$VERSION" | sed 's/^v//' | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | sed 's/^v//' | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | sed 's/^v//' | cut -d. -f3)
+          NEXT_VERSION="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          echo "NEXT_VERSION"
+          echo "$NEXT_VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "next_version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
