@@ -5,6 +5,8 @@ export const APPROVED_BOTS = [
     'dependabot[bot]',
     // GitOps image tag updates (kubernetes-manifests, mi-charts-ci-demo)
     'movable-gitops-updater[bot]',
+    // Bot issue short-lived tokens to GitHub Actions workflows
+    'mi-gha-token-issuer[bot]',
 ];
 
 /**
