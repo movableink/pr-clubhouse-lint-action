@@ -23622,7 +23622,9 @@ var APPROVED_BOTS = [
   // Dependency updates (coherentpath also allows `dependabot/` branches)
   "dependabot[bot]",
   // GitOps image tag updates (kubernetes-manifests, mi-charts-ci-demo)
-  "movable-gitops-updater[bot]"
+  "movable-gitops-updater[bot]",
+  // Bot issue short-lived tokens to GitHub Actions workflows
+  "mi-gha-token-issuer[bot]"
 ];
 function isApprovedBot(login, extraInput = "") {
   if (!login) {
