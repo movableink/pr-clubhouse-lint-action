@@ -1,0 +1,28 @@
+src/coherentpath-pr-check.js
+  s_9585bc3c823a77::t_068ec7c4b75465 26,28,30
+  s_9585bc3c823a77::t_9b6b4e1f86f2da 131-134,137-140,145-147
+test/coherentpath-pr-check.test.js
+  s_9585bc3c823a77::t_ef0c2eac4a7d4b 85,94,182,304-353
+  s_9585bc3c823a77::t_476907f80bc3a0 10,76-84,86-93,95,170-181,183-184,217,245-247
+src/main.js
+  s_9585bc3c823a77::t_5ab839ead604f8 58-59,61
+  s_9585bc3c823a77::t_db76cd1a029df1 30-32,34-38,40-43
+dist/index.js
+  s_9585bc3c823a77::t_f8e8ff67970277 23699,23701,23703,23775,23777-23778,23782-23784,23809-23812,23822-23823,23825
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a8d9fde04afc78690ff80750570370cf2274f53e",
+  "prompts": {},
+  "sessions": {
+    "s_9585bc3c823a77": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9cd75830-7be2-4a8d-a832-0dc8d12088b7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Prateeka-Hegde <phegde@movableink.com>"
+    }
+  }
+}

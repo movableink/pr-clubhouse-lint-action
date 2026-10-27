@@ -1,0 +1,19 @@
+dist/index.js
+  s_b3e9c9c0166a3d::t_2e157bc450310d 23625-23627
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "509dcbb16f663f093994a8b5a784fbfecf7c851c",
+  "prompts": {},
+  "sessions": {
+    "s_b3e9c9c0166a3d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1fa4c7b7-14d8-4f15-b547-f0e8d134bbaf",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Prateeka-Hegde <phegde@movableink.com>"
+    }
+  }
+}
