@@ -27,11 +27,20 @@ export function resolveProfile(context, input) {
 }
 
 /**
+ * The token to call the API with. The coherentpath profile prefers the `github-token` input, so an
+ * unrelated GITHUB_TOKEN in the environment cannot override it. The movableink profile keeps the
+ * original behavior, where GITHUB_TOKEN wins.
+ */
+export function selectToken(profile, envToken, inputToken) {
+    return profile === 'coherentpath-PR-check'
+        ? inputToken || envToken
+        : envToken || inputToken;
+}
+
+/**
  * The core action logic, testable with injected context and api.
  */
-export async function action(context, api) {
-    const profile = resolveProfile(context, core.getInput('profile'));
-
+export async function action(context, api, profile = resolveProfile(context, core.getInput('profile'))) {
     core.info(`Using ${profile} profile`);
 
     if (profile === 'coherentpath-PR-check') {
@@ -46,7 +55,8 @@ export async function action(context, api) {
  */
 export async function run() {
     const context = github.context;
-    const token = process.env.GITHUB_TOKEN || core.getInput('github-token');
+    const profile = resolveProfile(context, core.getInput('profile'));
+    const token = selectToken(profile, process.env.GITHUB_TOKEN, core.getInput('github-token'));
     const api = token ? github.getOctokit(token) : null;
-    await action(context, api);
+    await action(context, api, profile);
 }

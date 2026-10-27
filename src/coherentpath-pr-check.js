@@ -23,11 +23,11 @@ const checks = {
     body: [
         shortcutRegex,
         // Okta Access Requests
-        /movableink.at.okta.com/,
+        /movableink\.at\.okta\.com/,
         // SolarWinds
-        /movableink.samanage.com/,
+        /movableink\.samanage\.com/,
         // Zendesk
-        /movableink.zendesk.com/,
+        /movableink\.zendesk\.com/,
         // Bypass for valid exceptions, e.g. hotfixes
         /\[doc-skip\]/,
     ],
@@ -128,16 +128,23 @@ export async function coherentpathPrCheck(context, api) {
         return;
     }
 
+    // Read the title and body from the API rather than the event payload, as the old action
+    // did, so a re-run sees the current values.
+    const { data: pr } = await api.rest.pulls.get(repoInfo);
+
     const files = await api.paginate(api.rest.pulls.listFiles, { ...repoInfo, per_page: 100 });
 
-    if (!hasMaterialChanges(files)) {
+    // pulls.listFiles returns at most 3000 files, so only skip when every changed file was seen.
+    const sawAllFiles = !(files.length < pr.changed_files);
+
+    if (sawAllFiles && !hasMaterialChanges(files)) {
         core.info('The PR Doc Check is not required for this Pull Request. (No material changes detected)');
         return;
     }
 
-    // Read the title and body from the API rather than the event payload, as the old action
-    // did, so a re-run sees the current values.
-    const { data: pr } = await api.rest.pulls.get(repoInfo);
+    if (!sawAllFiles) {
+        core.info(`Only ${files.length} of ${pr.changed_files} changed files could be listed, so treating this Pull Request as a material change.`);
+    }
 
     if (passesDocCheck({ branch: pull_request.head.ref, title: pr.title, body: pr.body })) {
         core.info('The PR Doc Check has passed successfully.');

@@ -23696,11 +23696,11 @@ var checks = {
   body: [
     shortcutRegex2,
     // Okta Access Requests
-    /movableink.at.okta.com/,
+    /movableink\.at\.okta\.com/,
     // SolarWinds
-    /movableink.samanage.com/,
+    /movableink\.samanage\.com/,
     // Zendesk
-    /movableink.zendesk.com/,
+    /movableink\.zendesk\.com/,
     // Bypass for valid exceptions, e.g. hotfixes
     /\[doc-skip\]/
   ]
@@ -23772,12 +23772,16 @@ async function coherentpathPrCheck(context3, api) {
     info(`The PR Doc Check is not required for this Pull Request. (Branch target '${baseRef}' != repo default '${defaultBranch}')`);
     return;
   }
+  const { data: pr } = await api.rest.pulls.get(repoInfo);
   const files = await api.paginate(api.rest.pulls.listFiles, { ...repoInfo, per_page: 100 });
-  if (!hasMaterialChanges(files)) {
+  const sawAllFiles = !(files.length < pr.changed_files);
+  if (sawAllFiles && !hasMaterialChanges(files)) {
     info("The PR Doc Check is not required for this Pull Request. (No material changes detected)");
     return;
   }
-  const { data: pr } = await api.rest.pulls.get(repoInfo);
+  if (!sawAllFiles) {
+    info(`Only ${files.length} of ${pr.changed_files} changed files could be listed, so treating this Pull Request as a material change.`);
+  }
   if (passesDocCheck({ branch: pull_request.head.ref, title: pr.title, body: pr.body })) {
     info("The PR Doc Check has passed successfully.");
     return;
@@ -23802,8 +23806,10 @@ function resolveProfile(context3, input) {
   const owner = repository && repository.owner && repository.owner.login || "";
   return COHERENTPATH_ORGS.includes(owner.toLowerCase()) ? "coherentpath-PR-check" : "movableink-PR-check";
 }
-async function action(context3, api) {
-  const profile = resolveProfile(context3, getInput("profile"));
+function selectToken(profile, envToken, inputToken) {
+  return profile === "coherentpath-PR-check" ? inputToken || envToken : envToken || inputToken;
+}
+async function action(context3, api, profile = resolveProfile(context3, getInput("profile"))) {
   info(`Using ${profile} profile`);
   if (profile === "coherentpath-PR-check") {
     await coherentpathPrCheck(context3, api);
@@ -23813,9 +23819,10 @@ async function action(context3, api) {
 }
 async function run() {
   const context3 = context2;
-  const token = process.env.GITHUB_TOKEN || getInput("github-token");
+  const profile = resolveProfile(context3, getInput("profile"));
+  const token = selectToken(profile, process.env.GITHUB_TOKEN, getInput("github-token"));
   const api = token ? getOctokit(token) : null;
-  await action(context3, api);
+  await action(context3, api, profile);
 }
 
 // src/index.js

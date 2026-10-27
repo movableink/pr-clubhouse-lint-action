@@ -7,7 +7,7 @@ jest.unstable_mockModule('@actions/core', () => ({
   info: jest.fn(),
 }));
 
-const { action, resolveProfile } = await import('../src/main.js');
+const { action, resolveProfile, selectToken } = await import('../src/main.js');
 const { passesDocCheck, hasMaterialChanges } = await import('../src/coherentpath-pr-check.js');
 const core = await import('@actions/core');
 
@@ -71,6 +71,26 @@ describe('passesDocCheck', () => {
     expect(check('test', '[doc-`skip]')).toBe(true);
     // JSON encoding left a backslash behind when the double quote was removed
     expect(check('test', '[doc-"skip]')).toBe(false);
+  });
+
+  it.each([
+    'https://movableink-at-okta.com/next/requests/999',
+    'movableinkXatXoktaXcom',
+    'https://movableink-samanage.com/incidents/1',
+    'movableink_samanage_com',
+    'https://movableink-zendesk.com/agent/tickets/1',
+    'movableinkXzendeskXcom',
+  ])('fails for lookalike documentation host %j', (body) => {
+    expect(check('test', body)).toBe(false);
+  });
+
+  it.each([
+    'https://movableink.at.okta.com/next/requests/999',
+    'https://movableink.samanage.com/incidents/1',
+    'https://movableink.zendesk.com/agent/tickets/1',
+    'see HTTPS://movableink.zendesk.com/agent/tickets/1 for details',
+  ])('passes for real documentation host %j', (body) => {
+    expect(check('test', body)).toBe(true);
   });
 
   it('matches against the HTML-escaped body', () => {
@@ -147,6 +167,21 @@ describe('hasMaterialChanges', () => {
   });
 });
 
+describe('selectToken', () => {
+  it.each([
+    ['coherentpath-PR-check', 'env', 'input', 'input'],
+    ['coherentpath-PR-check', 'env', '', 'env'],
+    ['coherentpath-PR-check', undefined, 'input', 'input'],
+    ['coherentpath-PR-check', undefined, '', undefined],
+    ['movableink-PR-check', 'env', 'input', 'env'],
+    ['movableink-PR-check', undefined, 'input', 'input'],
+    ['movableink-PR-check', 'env', '', 'env'],
+    ['movableink-PR-check', undefined, '', ''],
+  ])('%s with env %j and input %j uses %j', (profile, env, input, expected) => {
+    expect(selectToken(profile, env, input)).toBe(expected);
+  });
+});
+
 describe('resolveProfile', () => {
   const ctx = (owner) => ({ payload: { repository: { owner: { login: owner } } } });
 
@@ -179,6 +214,7 @@ describe('coherentpath-PR-check profile', () => {
     defaultBranch = 'main',
     login = 'some-human',
     changedFiles = ['src/index.js'],
+    totalChangedFiles,
     apiTitle,
     apiBody,
   } = {}) => {
@@ -206,7 +242,9 @@ describe('coherentpath-PR-check profile', () => {
       rest: {
         pulls: {
           listFiles: 'listFiles',
-          get: jest.fn().mockResolvedValue({ data: { title: apiTitle ?? title, body: apiBody ?? body } }),
+          get: jest.fn().mockResolvedValue({
+            data: { title: apiTitle ?? title, body: apiBody ?? body, changed_files: totalChangedFiles ?? changedFiles.length },
+          }),
         },
         checks: {
           listForRef: jest.fn(),
@@ -261,6 +299,56 @@ describe('coherentpath-PR-check profile', () => {
     await action(context, api);
     expect(core.setFailed).not.toHaveBeenCalled();
     expect(core.info).toHaveBeenCalledWith('The PR Doc Check is not required for this Pull Request. (No material changes detected)');
+  });
+
+  describe('when the file list is truncated', () => {
+    // pulls.listFiles stops at 3000 files
+    const exempt = Array.from({ length: 3000 }, (_, i) => `docs/page-${i}.md`);
+
+    it('treats the PR as material and fails without a ticket', async () => {
+      setup({ changedFiles: exempt, totalChangedFiles: 3500 });
+      await action(context, api);
+      expect(core.info).toHaveBeenCalledWith('Only 3000 of 3500 changed files could be listed, so treating this Pull Request as a material change.');
+      expect(core.setFailed).toHaveBeenCalledWith('The PR Doc Check has failed.');
+    });
+
+    it('passes with a ticket', async () => {
+      setup({ changedFiles: exempt, totalChangedFiles: 3500, title: '[sc-1] big docs PR' });
+      await action(context, api);
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(core.info).toHaveBeenCalledWith('The PR Doc Check has passed successfully.');
+    });
+
+    it('still skips when exactly 3000 exempt files were listed and that is all of them', async () => {
+      setup({ changedFiles: exempt, totalChangedFiles: 3000 });
+      await action(context, api);
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(core.info).toHaveBeenCalledWith('The PR Doc Check is not required for this Pull Request. (No material changes detected)');
+    });
+  });
+
+  it('still skips when changed_files is missing from the API response', async () => {
+    setup({ changedFiles: ['README.md'] });
+    api.rest.pulls.get.mockResolvedValue({ data: { title: 'x', body: 'y' } });
+    await action(context, api);
+    expect(core.setFailed).not.toHaveBeenCalled();
+    expect(core.info).toHaveBeenCalledWith('The PR Doc Check is not required for this Pull Request. (No material changes detected)');
+  });
+
+  it('counts a deleted material file as a material change', async () => {
+    setup();
+    api.paginate.mockResolvedValue([{ filename: 'src/old.js', status: 'removed' }]);
+    await action(context, api);
+    expect(core.setFailed).toHaveBeenCalledWith('The PR Doc Check has failed.');
+  });
+
+  it('reads the PR before listing files', async () => {
+    setup();
+    const order = [];
+    api.rest.pulls.get.mockImplementation(async () => { order.push('get'); return { data: { title: 'x', body: 'y', changed_files: 1 } }; });
+    api.paginate.mockImplementation(async () => { order.push('listFiles'); return [{ filename: 'src/a.js', status: 'modified' }]; });
+    await action(context, api);
+    expect(order).toEqual(['get', 'listFiles']);
   });
 
   it('skips PRs not targeting the default branch', async () => {
