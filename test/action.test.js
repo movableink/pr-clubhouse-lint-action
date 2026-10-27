@@ -79,6 +79,7 @@ describe('pr-lint-action', () => {
     core.warning.mockReset();
     core.setFailed.mockReset();
     core.getInput.mockReset().mockReturnValue('');
+    process.env.GITHUB_TOKEN = 'fake_token';
   });
 
   describe('checking status', () => {
@@ -198,17 +199,17 @@ describe('pr-lint-action', () => {
     });
 
     it('bypasses the check when PR author is an approved bot', async () => {
-      core.getInput.mockReturnValue('dependabot[bot], renovate[bot]');
-      context.payload = pullRequestOpenedFixture({ ...bad_title_and_branch, user_login: 'dependabot[bot]' });
+      mockInputs({ 'approved-bots': 'some-repo-bot[bot], renovate[bot]' });
+      context.payload = pullRequestOpenedFixture({ ...bad_title_and_branch, user_login: 'some-repo-bot[bot]' });
 
       await action(context, api);
-      expect(core.info).toHaveBeenCalledWith('Bypassing check for approved bot: dependabot[bot]');
+      expect(core.info).toHaveBeenCalledWith('Bypassing check for approved bot: some-repo-bot[bot]');
       expect(core.setFailed).not.toHaveBeenCalled();
       expect.assertions(2);
     });
 
     it('does not bypass when PR author is not in the approved bots list', async () => {
-      core.getInput.mockReturnValue('dependabot[bot]');
+      mockInputs({ 'approved-bots': 'some-repo-bot[bot]' });
       context.payload = pullRequestOpenedFixture({ ...bad_title_and_branch, user_login: 'some-human' });
 
       await action(context, api);
@@ -216,13 +217,21 @@ describe('pr-lint-action', () => {
       expect.assertions(1);
     });
 
-    it('does not bypass when approved-bots input is empty', async () => {
-      core.getInput.mockReturnValue('');
-      context.payload = pullRequestOpenedFixture({ ...bad_title_and_branch, user_login: 'dependabot[bot]' });
+    it('does not bypass a bot outside the central list when approved-bots input is empty', async () => {
+      context.payload = pullRequestOpenedFixture({ ...bad_title_and_branch, user_login: 'some-repo-bot[bot]' });
 
       await action(context, api);
       expect(core.setFailed).toHaveBeenCalledWith('PR Linting Failed');
       expect.assertions(1);
+    });
+
+    it.each(['dependabot[bot]', 'movable-gitops-updater[bot]'])('bypasses %s from the central list with no input', async (login) => {
+      context.payload = pullRequestOpenedFixture({ ...bad_title_and_branch, user_login: login });
+
+      await action(context, api);
+      expect(core.info).toHaveBeenCalledWith(`Bypassing check for approved bot: ${login}`);
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect.assertions(2);
     });
   });
 
@@ -365,6 +374,10 @@ describe('pr-lint-action', () => {
 
   });
 });
+
+function mockInputs(inputs) {
+  core.getInput.mockImplementation(name => inputs[name] || '');
+}
 
 function pullRequestOpenedFixture({ title, ref_name, body, user_login }) {
   return {

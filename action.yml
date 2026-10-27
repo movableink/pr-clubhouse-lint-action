@@ -3,9 +3,19 @@ description: Checks pull requests to ensure they have Shortcut links
 author: Movable Ink
 inputs:
   approved-bots:
-    description: 'Comma-separated list of bot usernames that are allowed to bypass the Shortcut ID check'
+    description: 'Comma-separated list of extra bot usernames, beyond the central list in src/bots.js, that are allowed to bypass the check'
     required: false
     default: ''
+  profile:
+    description: >-
+      Which compliance check to run. `movableink-PR-check` is the original movableink check, `coherentpath-PR-check` is the
+      former coherentpath/action-doc-check. `auto` uses `coherentpath-PR-check` for coherentpath repos and `movableink-PR-check` otherwise.
+    required: false
+    default: 'auto'
+  github-token:
+    description: 'Token used by the coherentpath-PR-check profile to read the pull request and its changed files'
+    required: false
+    default: ${{ github.token }}
 runs:
   using: "node24"
   main: "dist/index.js"

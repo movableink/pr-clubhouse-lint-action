@@ -23617,15 +23617,31 @@ function getOctokit(token, options, ...additionalPlugins) {
   return new GitHubWithPlugins(getOctokitOptions(token, options));
 }
 
-// src/main.js
+// src/bots.js
+var APPROVED_BOTS = [
+  // Dependency updates (coherentpath also allows `dependabot/` branches)
+  "dependabot[bot]",
+  // GitOps image tag updates (kubernetes-manifests, mi-charts-ci-demo)
+  "movable-gitops-updater[bot]",
+  // Bot issue short-lived tokens to GitHub Actions workflows
+  "mi-gha-token-issuer[bot]"
+];
+function isApprovedBot(login, extraInput = "") {
+  if (!login) {
+    return false;
+  }
+  const extra = extraInput.split(",").map((s) => s.trim()).filter(Boolean);
+  return [...APPROVED_BOTS, ...extra].some((bot) => bot.toLowerCase() === login.toLowerCase());
+}
+
+// src/movableink-pr-check.js
 var shortcutRegex = /(\[ch\d+\])|(ch\d+\/)|(\[sc\d+\])|(sc\d+\/)|(\[sc-\d+\])|(sc-\d+\/)/;
 var jobNames = ["Shortcut", "Check for story ID"];
-async function action(context3, api) {
+async function movableinkPrCheck(context3, api) {
   const pull_request = context3.payload.pull_request;
   const repository = context3.payload.repository;
-  const approvedBots = getInput("approved-bots").split(",").map((s) => s.trim()).filter(Boolean);
   const prAuthor = pull_request.user && pull_request.user.login;
-  if (approvedBots.length > 0 && approvedBots.includes(prAuthor)) {
+  if (isApprovedBot(prAuthor, getInput("approved-bots"))) {
     info(`Bypassing check for approved bot: ${prAuthor}`);
     return;
   }
@@ -23664,10 +23680,149 @@ async function action(context3, api) {
     }
   }
 }
+
+// src/coherentpath-pr-check.js
+var exemptFileRegexes = [
+  // Markdown files anywhere in the repo, e.g. README.md, docs/guide.md
+  /\.md$/,
+  // Helm values files under the top-level helm/ directory, e.g. helm/app/values-prod.yaml
+  /^helm\/(?:[^/]+\/)*values[^/]*$/
+];
+var isMaterialFile = (filename) => !exemptFileRegexes.some((regex) => regex.test(filename));
+var shortcutRegex2 = /(\[sc-\d+\])|(sc-\d+)/;
+var checks = {
+  branch: [shortcutRegex2, /^dependabot\/.*/],
+  title: [shortcutRegex2],
+  body: [
+    shortcutRegex2,
+    // Okta Access Requests
+    /movableink\.at\.okta\.com/,
+    // SolarWinds
+    /movableink\.samanage\.com/,
+    // Zendesk
+    /movableink\.zendesk\.com/,
+    // Bypass for valid exceptions, e.g. hotfixes
+    /\[doc-skip\]/
+  ]
+};
+var failureMessage = `
+**********************************************
+**********************************************
+**********************************************
+
+The PR Doc Check has failed.
+
+Please ensure there is a link to an appropriate documentation source in the Pull Request - via a Shortcut code, Solarwinds URL, or Zendesk URL.
+
+For full reference see: https://www.notion.so/movableinkepd/Change-Request-Policy-ae165d2791614347b1f5331146615334#93896a8e42b84690adfb3851b08a2d17
+
+**********************************************
+**********************************************
+**********************************************
+`;
+function hasMaterialChanges(files) {
+  return files.some(
+    (file) => isMaterialFile(file.filename) || file.status === "renamed" && !!file.previous_filename && isMaterialFile(file.previous_filename)
+  );
+}
+function normalizeBody(body) {
+  return JSON.stringify(body ?? null).replace(/['"`]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function passesDocCheck({ branch, title, body }) {
+  const pr = {
+    branch: branch || "",
+    title: title || "",
+    body: normalizeBody(body)
+  };
+  return Object.entries(checks).some(([field, regexes]) => regexes.some((regex) => regex.test(pr[field])));
+}
+async function coherentpathPrCheck(context3, api) {
+  const { eventName, payload } = context3;
+  if (eventName === "merge_group") {
+    const match = (context3.ref || "").match(/.*\/pr-(\d+)-/);
+    if (!match) {
+      setFailed(`The PR Doc Check could not find a pull request number in ${context3.ref}.`);
+      return;
+    }
+    info(`The PR Doc Check is not required for merge queue runs. (PR #${match[1]})`);
+    return;
+  }
+  if (eventName !== "pull_request") {
+    setFailed("The PR Doc Check action only works with pull_request or merge_group events.");
+    return;
+  }
+  if (!api) {
+    setFailed("The PR Doc Check requires a GitHub token.");
+    return;
+  }
+  const pull_request = payload.pull_request;
+  const repoInfo = {
+    owner: payload.repository.owner.login,
+    repo: payload.repository.name,
+    pull_number: pull_request.number
+  };
+  const prAuthor = pull_request.user && pull_request.user.login;
+  if (isApprovedBot(prAuthor, getInput("approved-bots"))) {
+    info(`Bypassing check for approved bot: ${prAuthor}`);
+    return;
+  }
+  const baseRef = pull_request.base.ref;
+  const defaultBranch = payload.repository.default_branch;
+  if (baseRef !== defaultBranch) {
+    info(`The PR Doc Check is not required for this Pull Request. (Branch target '${baseRef}' != repo default '${defaultBranch}')`);
+    return;
+  }
+  const { data: pr } = await api.rest.pulls.get(repoInfo);
+  const files = await api.paginate(api.rest.pulls.listFiles, { ...repoInfo, per_page: 100 });
+  const sawAllFiles = !(files.length < pr.changed_files);
+  if (sawAllFiles && !hasMaterialChanges(files)) {
+    info("The PR Doc Check is not required for this Pull Request. (No material changes detected)");
+    return;
+  }
+  if (!sawAllFiles) {
+    info(`Only ${files.length} of ${pr.changed_files} changed files could be listed, so treating this Pull Request as a material change.`);
+  }
+  if (passesDocCheck({ branch: pull_request.head.ref, title: pr.title, body: pr.body })) {
+    info("The PR Doc Check has passed successfully.");
+    return;
+  }
+  info(failureMessage);
+  setFailed("The PR Doc Check has failed.");
+}
+
+// src/main.js
+var PROFILES = ["movableink-PR-check", "coherentpath-PR-check"];
+var COHERENTPATH_ORGS = ["coherentpath"];
+function resolveProfile(context3, input) {
+  const requested = (input || "auto").trim().toLowerCase();
+  if (requested !== "auto") {
+    const profile = PROFILES.find((p) => p.toLowerCase() === requested);
+    if (!profile) {
+      throw new Error(`Unknown profile '${input}'. Expected one of: auto, ${PROFILES.join(", ")}`);
+    }
+    return profile;
+  }
+  const repository = context3.payload.repository;
+  const owner = repository && repository.owner && repository.owner.login || "";
+  return COHERENTPATH_ORGS.includes(owner.toLowerCase()) ? "coherentpath-PR-check" : "movableink-PR-check";
+}
+function selectToken(profile, envToken, inputToken) {
+  return profile === "coherentpath-PR-check" ? inputToken || envToken : envToken || inputToken;
+}
+async function action(context3, api, profile = resolveProfile(context3, getInput("profile"))) {
+  info(`Using ${profile} profile`);
+  if (profile === "coherentpath-PR-check") {
+    await coherentpathPrCheck(context3, api);
+  } else {
+    await movableinkPrCheck(context3, api);
+  }
+}
 async function run() {
   const context3 = context2;
-  const api = process.env.GITHUB_TOKEN ? getOctokit(process.env.GITHUB_TOKEN) : null;
-  await action(context3, api);
+  const profile = resolveProfile(context3, getInput("profile"));
+  const token = selectToken(profile, process.env.GITHUB_TOKEN, getInput("github-token"));
+  const api = token ? getOctokit(token) : null;
+  await action(context3, api, profile);
 }
 
 // src/index.js

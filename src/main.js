@@ -1,79 +1,52 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { movableinkPrCheck } from './movableink-pr-check.js';
+import { coherentpathPrCheck } from './coherentpath-pr-check.js';
 
-// Matches
-// [ch49555] or [sc-49555] or [sc49555] ticket reference
-// ch49555/branch-name or sc49555/branch-name or sc-49555/branch-name
-const shortcutRegex = /(\[ch\d+\])|(ch\d+\/)|(\[sc\d+\])|(sc\d+\/)|(\[sc-\d+\])|(sc-\d+\/)/;
+export const PROFILES = ['movableink-PR-check', 'coherentpath-PR-check'];
 
-// We need to be able to identify old checks to neutralize them,
-// unfortunately the only way is to name them with one of these:
-const jobNames = ['Shortcut', 'Check for story ID'];
+// With `profile: auto`, repos in these orgs get the coherentpath-PR-check profile and
+// everything else gets movableink-PR-check.
+const COHERENTPATH_ORGS = ['coherentpath'];
+
+export function resolveProfile(context, input) {
+    const requested = (input || 'auto').trim().toLowerCase();
+
+    if (requested !== 'auto') {
+        const profile = PROFILES.find(p => p.toLowerCase() === requested);
+        if (!profile) {
+            throw new Error(`Unknown profile '${input}'. Expected one of: auto, ${PROFILES.join(', ')}`);
+        }
+        return profile;
+    }
+
+    const repository = context.payload.repository;
+    const owner = (repository && repository.owner && repository.owner.login) || '';
+
+    return COHERENTPATH_ORGS.includes(owner.toLowerCase()) ? 'coherentpath-PR-check' : 'movableink-PR-check';
+}
+
+/**
+ * The token to call the API with. The coherentpath profile prefers the `github-token` input, so an
+ * unrelated GITHUB_TOKEN in the environment cannot override it. The movableink profile keeps the
+ * original behavior, where GITHUB_TOKEN wins.
+ */
+export function selectToken(profile, envToken, inputToken) {
+    return profile === 'coherentpath-PR-check'
+        ? inputToken || envToken
+        : envToken || inputToken;
+}
 
 /**
  * The core action logic, testable with injected context and api.
  */
-export async function action(context, api) {
-    const pull_request = context.payload.pull_request;
-    const repository = context.payload.repository;
+export async function action(context, api, profile = resolveProfile(context, core.getInput('profile'))) {
+    core.info(`Using ${profile} profile`);
 
-    const approvedBots = core.getInput('approved-bots')
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean)
-
-    const prAuthor = pull_request.user && pull_request.user.login;
-
-    if (approvedBots.length > 0 && approvedBots.includes(prAuthor)) {
-        core.info(`Bypassing check for approved bot: ${prAuthor}`);
-        return;
-    }
-
-    const repoInfo = {
-        owner: repository.owner.login,
-        repo: repository.name,
-        ref: pull_request.head.ref
-    };
-
-    const toSearch = [];
-
-    const { title, body } = pull_request;
-
-    toSearch.push(`PR title: ${title}`);
-    toSearch.push(`PR body: ${body}`);
-
-    const headBranch = pull_request.head.ref.toLowerCase();
-
-    toSearch.push(`Branch name: ${headBranch}`);
-
-    const passed = toSearch.some(line => {
-        const linePassed = !!line.match(shortcutRegex);
-        core.info(`Searching ${line}...${linePassed}`);
-        return linePassed;
-    });
-
-    core.info(`Passed shortcut number check: ${passed}`);
-
-    if (!passed) {
-        core.setFailed('PR Linting Failed');
-    }
-
-    if (process.env.GITHUB_TOKEN) {
-        const checkList = await api.rest.checks.listForRef(repoInfo);
-        const { check_runs } = checkList.data;
-
-        const shortcutChecks = check_runs.filter(r => jobNames.includes(r.name));
-        const completedChecks = shortcutChecks.filter(r => r.status === 'completed');
-
-        for (let check of completedChecks) {
-            core.info(`Updating ${check.id} check to neutral status`);
-
-            await api.rest.checks.update({
-                ...repoInfo,
-                check_run_id: check.id,
-                conclusion: 'neutral'
-            });
-        }
+    if (profile === 'coherentpath-PR-check') {
+        await coherentpathPrCheck(context, api);
+    } else {
+        await movableinkPrCheck(context, api);
     }
 }
 
@@ -82,8 +55,8 @@ export async function action(context, api) {
  */
 export async function run() {
     const context = github.context;
-    const api = process.env.GITHUB_TOKEN
-        ? github.getOctokit(process.env.GITHUB_TOKEN)
-        : null;
-    await action(context, api);
+    const profile = resolveProfile(context, core.getInput('profile'));
+    const token = selectToken(profile, process.env.GITHUB_TOKEN, core.getInput('github-token'));
+    const api = token ? github.getOctokit(token) : null;
+    await action(context, api, profile);
 }
